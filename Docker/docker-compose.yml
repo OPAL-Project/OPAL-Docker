@@ -1,0 +1,95 @@
+version: '3'
+services:
+    mongodb:
+        image: mongo:latest@sha256:84f9f4f66809872d952cdc33946d72df6a02e1e8ee00529e5ccdea46dd08a84f
+        environment:
+            - MONGO_DATA_DIR=/data/mongodb
+            - MONGO_LOG_DIR=/dev/null
+            - MONGODB_DBNAME=opal
+        command: mongod --smallfiles --logpath=/dev/null # --quiet
+        ports:
+            - 27017:27017
+        volumes:
+            - /mnt/db/mongodata:/data/mongodb
+
+    mongodb-initialize:
+        image: opalservices/opal-mongodb-initialize:latest@sha256:fdba2a4d746502d18bb05d2a2a428ac0360561e187091d2c8b4b9b5af8a82cc2
+        depends_on:
+            - mongodb
+        links:
+            - mongodb
+
+    cache:
+        image: opalservices/opal-cache:latest@sha256:be600e6b5219603e1f61f826c784f615eeac911b333bd1750f93db2661382ddc
+        depends_on:
+            - mongodb-initialize
+        links:
+            - mongodb
+        volumes:
+            - ./opal.cache.config.js:/usr/app/config/opal.cache.config.js
+
+    algoservice:
+        image: opalservices/opal-algoservice:latest@sha256:ad861aa7dd15bea4ff994f5f7ffb661c88e78d4e2ff2a6be7ea80f6ee0c3d799
+        depends_on:
+            - mongodb-initialize
+        links:
+            - mongodb
+        volumes:
+            - ./opal.algoservice.config.js:/usr/app/config/opal.algoservice.config.js
+            - /mnt/db/algoservicedata:/usr/app/data
+        command: sh -c './src/wait-for.sh mongodb:27017 -- npm start'
+
+    interface:
+        image: opalservices/opal-interface:latest@sha256:62f1ca0f7b9c089dbdbdecf339ada0a9320d581f69380e864edc7ab0ffdcc137
+        depends_on:
+            - mongodb-initialize
+            - cache
+            - algoservice
+        links:
+            - mongodb
+            - cache
+            - algoservice
+        ports:
+            - 80:80
+        volumes:
+            - ./opal.interface.config.js:/usr/app/config/opal.interface.config.js
+
+    timescaledb:
+        image: timescale/timescaledb:latest@sha256:298b4fb544136f3c5eca56b8829f58b52a2bed75fd4d662fe1fae0af2c24127d
+        volumes:
+            - /mnt/db/pgdata:/var/lib/postgresql/data
+
+    timescaledb-initialize:
+        build:
+            context: ..
+            dockerfile: ./timescaledb/Dockerfile
+        depends_on:
+            - timescaledb
+        links:
+            - timescaledb
+
+    aggandprivacy:
+        image: opalservices/opal-privacy:latest@sha256:1eee59a977738eca62a0b25d94aa70a60b5cf4ea5f9f39e1c091fbbcf19d3803
+        depends_on:
+            - algoservice
+        command: sh -c 'npm start'
+        volumes:
+            - ./opal.privacy.config.js:/usr/app/config/opal.privacy.config.js
+
+    compute:
+        image: opalservices/opal-compute:latest@sha256:40ae08155de7b7728101705b0f4a6d012e64ee9ef2e7c7ae47ceb9cde0f89be3
+        command: sh -c 'sudo apparmor_init && sleep 5 && sudo npm start'
+        privileged: true
+        security_opt:
+            - apparmor:unconfined
+        volumes:
+            - ./opal.compute.config.js:/home/opal/app/config/opal.compute.config.js
+
+    scheduler:
+        image: opalservices/opal-scheduler:latest@sha256:7fc5fdf86db0fef3b3ee4d0c78a4d2edb3d54509a5a4720ae1a8275d38a57288
+        depends_on:
+            - compute
+        links:
+            - compute
+        volumes:
+            - ./opal.scheduler.config.js:/usr/app/config/opal.scheduler.config.js

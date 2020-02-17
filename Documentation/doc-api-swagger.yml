@@ -1,0 +1,718 @@
+swagger: '2.0'
+info:
+  version: 0.0.2
+  title: Opal-interface
+  license:
+    name: MIT
+    url: 'https://github.com/opal-project/opal-interface/blob/master/LICENSE'
+  description: The OPAL-interface provides the API to interact with the opal eco-system. The core function of the API is first and foremost to enable authorized users to submit jobs to OPAL. The two other features that the Interface manages are the management of users(creation, deletion and providing information about them) and providing the current statuses of all the services in the environment. The currently managed services are Interface, Cache, Privacy, Scheduler and Compute.
+paths:
+  /status:
+    get:
+      description: Status report. Part of the standard API for all the opal components
+      responses:
+        '200':
+          description: 'Status report is active, replies the current status'
+          schema:
+            type: object
+            description: Status report
+            properties:
+              status:
+                type: string
+                description: MUST be one of EAE_SERVICE_STATUS_XXX
+                example: eae_service_idle
+
+  /specs:
+    get:
+      description: Detailed status report. Part of the standard API for OPAL components
+      responses:
+        '200':
+          description: desc
+          schema:
+            $ref: '#/definitions/statusModel'
+
+  /job:
+    post:
+      description: Get a specific job
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - jobID
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              jobID:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              jobID: jhfwd8u210ujfdsasfd
+      responses:
+        '200':
+          description: Sends back the job
+          schema:
+            $ref: '#/definitions/jobModel'
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /job/getAll:
+    post:
+      description: Get all jobs not archieved. Admin only
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+      responses:
+        '200':
+          description: Sends back an array of jobs
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/jobModel'
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /job/create:
+    post:
+      description: Creates a new job to be computed on the OPAL platform
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          description: Create new job. Job object is passed as JSON string obligatorily contained the following fields - type, main, params, input. Value of type can be one of the following - python2, spark, r, tensorflow.
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - job
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              job:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              job: '{"type":"python2","main":"test.py","params":["Vi_Veri_Veniversum_Vivus_Vici"],"input":["test.py","faust.txt"]}'
+      responses:
+        '200':
+          description: Sends back 'OK'
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Contains 'OK'
+              jobID:
+                type: string
+                description: Contains the id of the job
+            example:
+              status: OK
+              jobID: jkfj32twkl423fj1ru
+
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '405':
+          description: The requested compute type is not supported
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /job/cancel:
+    post:
+      description: Cancels a job. Check that user requesting is owner of the job or Admin
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - jobID
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              jobID:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              jobID: jhfwd8u210ujfdsasfd
+      responses:
+        '200':
+          description: Sends back an acknowledgement that the job has been cancelled
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Acknowledgement
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '412':
+          description: The requested job is not in a valid state to be cancelled
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /job/results:
+    post:
+      description: >-
+        Retrieve the results for a specific job when they are available.
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - jobID
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              jobID:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              jobID: jhfwd8u210ujfdsasfd
+      responses:
+        '200':
+          description: Sends back the results
+          schema:
+            type: object
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '412':
+          description: The requested job is not ready for collection
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /servicesStatus:
+    post:
+      description: >-
+        Checks that the request is coming from an Admin and sends back the
+        statuses of all the services in the cluster.
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+      responses:
+        '200':
+          description: desc
+          schema:
+            type: array
+            description: Each items represents a single service in the cluster
+            items:
+              $ref: '#/definitions/statusModel'
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /user:
+    post:
+      description: Sends back the profile of the requested user. By admin only
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          description: The user whose information is to be queried. User must already exist.
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - requestedUsername
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              requestedUsername:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              requestedUsername: chanTaiMan
+
+      responses:
+        '200':
+          description: User object is returned.
+          schema:
+            $ref: '#/definitions/userModel'
+
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /user/getAll:
+    post:
+      description: Sends back the name of all users of specified type. By admin only
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          description: Specifying the type of users to be returned. Supported types are 'ADMIN', 'STANDARD' and 'ALL'. If no users of such type exists, an empty array is returned.
+          schema:
+            type: object
+            required:
+              - opalUserToken
+              - userType
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              userType:
+                type: string
+            example:
+              opalUserToken: qwerty1234
+              userType: STANDARD
+      responses:
+        '200':
+          description: Array of users of specified type is returned.
+          schema:
+            type: array
+            items:
+              type: object
+            example:
+              - {username: 'admin'}
+              - {username: 'chanTaiMan'}
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /user/create:
+    post:
+      description: Create a new user to get access to the platform. By admin only
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          description: The user to be created is submited as a JSON string as value to the key 'newUser'. 'type' can be STANDARD or ADMIN with STANDARD being the default. The user token is automatically generated and returned.
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - newUser
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              newUser:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              newUser: '{"username": "chanTaiMan","type": "STANDARD"}'
+      responses:
+        '200':
+          description: New user created. Return user object.
+          schema:
+            $ref: '#/definitions/userModel'
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /user/delete:
+    delete:
+      description: Delete an existing user and remove their access to the platform.
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: request body
+          in: body
+          description: Supply username of user to be deleted.
+          schema:
+            type: object
+            required:
+              - opalUsername
+              - opalUserToken
+              - userToBeDeleted
+            properties:
+              opalUsername:
+                type: string
+              opalUserToken:
+                type: string
+              userToBeDeleted:
+                type: string
+            example:
+              opalUsername: admin
+              opalUserToken: admin
+              userToBeDeleted: chanTaiMan
+      responses:
+        '200':
+          description: Acknowledges that the specified user has been deleted
+          schema:
+            type: string
+            example: The user chanTaiMan has been successfully deleted
+        '401':
+          description: The request is not well formed
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+        '500':
+          description: Internal mongo or server error.
+          schema:
+            type: object
+            description: eAE ErrorStack tracking the error origin
+
+  /whoareyou:
+    get:
+      description: Implementation of the Hyper Text Coffee Pot Control Protocol
+      responses:
+        '418':
+          description: I am a teapot
+
+
+definitions:
+  statusModel:
+    description: Model to represent a service status
+    properties:
+      type:
+        type: string
+        description: Type of the OPAL service
+      status:
+        type: string
+        description: Current status of the service. Defaults to 'eae_service_idle'
+      statusLock:
+        type: boolean
+        description: Lock used to prevent the service status update
+      lastUpdate:
+        type: string
+        format: dateTime
+        description: Timestamp of the last update of this model
+      port:
+        type: integer
+        description: TCP Port the service is listening on
+      ip:
+        type: string
+        description: IPv4 address of the machine
+      hostname:
+        type: string
+        description: Domain name associated with this machine
+      system:
+        type: object
+        description: Hardware speciciafations
+        properties:
+          arch:
+            type: string
+            description: System architecture label
+          type:
+            type: string
+            description: System type label
+          platform:
+            type: string
+            description: Operating system name
+          version:
+            type: string
+            description: Operation system version number
+      cpu:
+        type: object
+        description: Information about the cpu
+        properties:
+          cores:
+            type: array
+            items:
+              type: object
+              description: A single core properties list
+          loadavg:
+            type: array
+            description: 'The load average for the last 1, 5 and 15 minutes'
+            items:
+              type: number
+      memory:
+        type: object
+        description: Information about the memory
+        properties:
+          total:
+            type: string
+            description: Total memory on the system. Unit is provided in the value
+          free:
+            type: string
+            description: Available memory on the system. Unit is provided in the value
+    example:
+      ip: 172.0.0.1
+      port: 8000
+      computeType: []
+      cpu:
+        cores:
+          - model: 'Intel Core Processor'
+            mhz: 2499
+          - model: 'Intel Core Processor'
+            mhz: 2499
+        loadavg:
+          - 0.03525435
+          - 0.03456875
+      hostname: b3b482421f78
+      lastUpdate: '2018-01-17T17:03:01.516Z'
+      memory:
+        total: 100GB
+        free: 50GB
+      status: eae_service_idle
+      statusLock: false
+      system:
+        arch: x64
+        type: Linux
+        platform: linux
+        version: 4.xx.xx
+      type: eae_api
+      version: 0.0.x
+
+  jobModel:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Unique identifier
+      type:
+        type: string
+        description: 'Job type definition, MUST be one of EAE_JOB_TYPE_XXX'
+      status:
+        type: array
+        description: History of jobs states
+        items:
+          type: string
+          description: 'State of the job, MUST be one of EAE_JOB_STATUS_XXX'
+      startDate:
+        type: string
+        format: dateTime
+        description: Timestamp tracking the creation of the job
+      main:
+        type: string
+        description: Main script file to execture
+      params:
+        type: array
+        description: Command line parameters for the script
+        items:
+          type: string
+          description: 'One parameter, can contain spaces'
+      input:
+        type: array
+        description: 'List of file inputs for this job, including main script'
+        items:
+          type: string
+          description: Name of one input file
+      endDate:
+        type: string
+        format: dateTime
+        description: Timestamp of when the job stops
+      exitCode:
+        type: integer
+        description: Exit code of the job processus
+      stdout:
+        type: string
+        description: Standard ouput TTY of the job processus
+      stderr:
+        type: string
+        description: Standard error TTY of the job processus
+      output:
+        type: array
+        description: List of files created in the local 'output' folder by the job process
+        items:
+          type: string
+          description: Name of the file
+      message:
+        type: string
+        description: Informative message on the last update operation
+    example:
+      _id: 5a5f7b93fsdfsdfsa176f8a7
+      type: r
+      status:
+        - eae_job_completed
+        - eae_job_cancelled
+        - eae_job_transferring_data
+        - eae_job_created
+      startDate: '2018-01-17T10:47:51.232Z'
+      requester: admin
+      main: test.py
+      params:
+        - Semper ubi sub ubi
+      input:
+        - script.py
+        - data.txt
+      endDate: '1970-01-01T00:00:00.000Z'
+      exitCode: -1
+      stdout: null
+      stderr: null
+      output: []
+      message: null
+      statusLock: false
+      executorIP: 127.0.0.1
+      executorPort: '9876'
+
+  userModel:
+    type: object
+    properties:
+      type:
+        type: string
+        description: Type of User. One of the userTypes
+      username:
+        type: string
+        description: Name of the user
+      token:
+        type: string
+        description: Token used as password by the user to authenticate
+      created:
+        type: string
+        format: dateTime
+        description: Timestamp of the creation of the job
+    example:
+        username: chanTaiMan
+        token: y1r9iufhoeq2ur9u192f
+        type: ADMIN
+        created: '2018-01-16T12:09:37.416Z'
+  unauthorizedAccess:
+    type: object
+    properties:
+      username:
+        type: string
+        description: Name of the user whom made the request
+      token:
+        type: string
+        description: Token used as password by the user to authenticate
+      headers:
+        type: array
+        description: Contains the headers of the HTTP request
+        items:
+          type: string
+          description: Header field and it's value
+      accessTimestamp:
+        type: string
+        format: dateTime
+        description: Timestamp of the log of the unauthorized access

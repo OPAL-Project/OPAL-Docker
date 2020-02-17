@@ -1,0 +1,28 @@
+[{"startDate": "2013-01-01T00:00:01Z",
+  "endDate": "2013-01-02T00:00:01Z",
+  "algorithmName": "density",
+  "resolution": "antenna",
+  "keySelector": [],
+  "sample": 0.01,
+  "params": {}
+ },
+  {"startDate": "2013-01-01T00:00:01Z",
+    "endDate": "2013-01-02T00:00:01Z",
+    "algorithmName": "mobility",
+    "resolution": "antenna",
+    "keySelector": [],
+    "sample": 0.01,
+    "params": {
+      "first_window": "2013-05-01T00:00:01Z",
+      "second_window": "2013-12-01T00:00:01Z"
+    }
+  },
+  {"startDate": "2013-01-01T00:00:01Z",
+    "endDate": "2013-12-31T23:59:59Z",
+    "algorithmName": "density",
+    "resolution": "antenna",
+    "keySelector": [],
+    "sample": 1,
+    "params": {}
+  }
+]

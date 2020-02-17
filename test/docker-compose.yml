@@ -1,0 +1,79 @@
+version: '3'
+services:
+    mongodb:
+        image: mongo:latest
+        environment:
+          - MONGO_DATA_DIR=/data/mongodb
+          - MONGO_LOG_DIR=/dev/null
+          - MONGODB_DBNAME=opal
+        command: mongod --smallfiles --logpath=/dev/null # --quiet
+        ports:
+          - 27017:27017
+
+    mongodb-initialize:
+        image: aoehmich/eae-mongodb-initialize:latest
+        depends_on:
+          - mongodb
+        links:
+          - mongodb
+
+    swift:
+        image: bouncestorage/swift-aio
+        ports:
+          - 8080:8080
+
+    compute1:
+        image: aoehmich/eae-compute:latest
+        depends_on:
+          - mongodb
+          - swift
+        links:
+          - mongodb
+          - swift
+        volumes:
+          - ./config/eae.compute.test.config.js:/usr/app/config/eae.compute.config.js
+
+    compute2:
+        image: aoehmich/eae-compute:latest
+        depends_on:
+          - mongodb
+          - swift
+        links:
+          - mongodb
+          - swift
+        volumes:
+          - ./config/eae.compute.test.config.js:/usr/app/config/eae.compute.config.js
+
+    scheduler:
+        image: aoehmich/eae-scheduler:latest
+        depends_on:
+          - compute1
+          - compute2
+        links:
+          - mongodb
+          - swift
+        volumes:
+          - ./config/eae.scheduler.test.config.js:/usr/app/config/eae.scheduler.config.js
+
+    carrier:
+        image: aoehmich/eae-carrier:latest
+        depends_on:
+          - scheduler
+        links:
+          - mongodb
+          - swift
+        ports:
+          - 3000:3000
+        volumes:
+          - ./config/eae.carrier.test.config.js:/usr/app/config/eae.carrier.config.js
+
+    interface:
+        image: aoehmich/eae-interface:latest
+        depends_on:
+          - carrier
+        links:
+          - mongodb
+        ports:
+          - 80:80
+        volumes:
+          - ./config/eae.interface.test.config.js:/usr/app/config/eae.interface.config.js
