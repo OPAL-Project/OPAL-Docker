@@ -55,7 +55,7 @@ services:
             - ./opal.interface.config.js:/usr/app/config/opal.interface.config.js
 
     timescaledb:
-        image: timescale/timescaledb:latest@sha256:298b4fb544136f3c5eca56b8829f58b52a2bed75fd4d662fe1fae0af2c24127d
+        image: timescale/timescaledb:latest@sha256:67ff699e420161e58c32d725966805ffef751061b9fccd52c62f3a71cf37189a
         volumes:
             - /mnt/db/pgdata:/var/lib/postgresql/data
 
