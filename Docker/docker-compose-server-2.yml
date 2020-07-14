@@ -1,7 +1,7 @@
 version: '3'
 services:
     timescaledb:
-        image: timescale/timescaledb:1.5.0-pg10
+        image: timescale/timescaledb:1.7.2-pg10
         volumes:
             - /mnt/db/pgdata:/var/lib/postgresql/data
         command: postgres -cmax_wal_size=10GB
