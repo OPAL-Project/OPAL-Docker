@@ -1,4 +1,4 @@
-FROM ubuntu:16.04@sha256:0d06090fff94c0a3640729c7ef7e6b36ad5b41bec600cc2be92739c90d204243
+FROM ubuntu:16.04@sha256:e37fbea4b19bc666db2a423389211b82815e01209b3969febcf29e172ae7ba99
 MAINTAINER Axel Oehmichen <axelfrancois.oehmichen11@imperial.ac.uk>
 
 WORKDIR /root
