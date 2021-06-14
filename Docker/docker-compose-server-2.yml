@@ -16,7 +16,7 @@ services:
             - timescaledb
 
     aggandprivacy:
-        image: opalservices/opal-privacy:latest@sha256:1eee59a977738eca62a0b25d94aa70a60b5cf4ea5f9f39e1c091fbbcf19d3803
+        image: opalservices/opal-privacy:latest@sha256:90fb7fade6e3676aa813aac57e9277b348c2bc7414b0ee67ed2ba2ccc4e1520d
         command: sh -c 'npm start'
         volumes:
             - ./opal.privacy.config.js:/usr/app/config/opal.privacy.config.js
