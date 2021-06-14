@@ -31,7 +31,7 @@ services:
             - ./opal.compute.config.js:/home/opal/app/config/opal.compute.config.js
 
     scheduler:
-        image: opalservices/opal-scheduler:latest@sha256:7fc5fdf86db0fef3b3ee4d0c78a4d2edb3d54509a5a4720ae1a8275d38a57288
+        image: opalservices/opal-scheduler:latest@sha256:f83af225cdfc3ccab211cbaacb694e8f734ef6ccfc4ed5b158040045933cd2de
         depends_on:
             - compute
         links:
