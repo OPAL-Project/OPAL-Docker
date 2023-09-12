@@ -25,7 +25,7 @@
   "homepage": "https://github.com/OPAL-Project/OPAL-Docker#readme",
   "devDependencies": {
     "eslint": "7.4.0",
-    "jest": "23.4.1",
+    "jest": "29.7.0",
     "request": "2.87.0",
     "uuid": "3.3.2"
   },
